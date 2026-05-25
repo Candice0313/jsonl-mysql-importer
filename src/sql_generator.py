@@ -1,9 +1,19 @@
 """SQLGenerator: generates MySQL CREATE TABLE statements for the JSONL-to-MySQL import system."""
 
+import json
+
 
 class SQLGenerator:
     MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
     BATCH_SIZE = 1000
+
+    def escape_string(self, value: str) -> str:
+        """Escape backslashes and single quotes for MySQL string literals."""
+        return value.replace("\\", "\\\\").replace("'", "\\'")
+
+    def to_json_string(self, value: list) -> str:
+        """Convert a Python list to a MySQL-compatible JSON string."""
+        return json.dumps(value, ensure_ascii=False)
 
     def generate_alias_table_schema(self) -> str:
         """Return the CREATE TABLE SQL for alias_table."""

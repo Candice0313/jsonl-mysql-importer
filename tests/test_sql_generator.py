@@ -119,3 +119,46 @@ class TestSQLGeneratorConstants:
 
     def test_batch_size(self):
         assert SQLGenerator.BATCH_SIZE == 1000
+
+
+class TestEscaping:
+    def test_escape_string_no_special_chars(self, generator):
+        """escape_string with no special chars returns unchanged string."""
+        result = generator.escape_string("hello world")
+        assert result == "hello world"
+
+    def test_escape_string_single_quote(self, generator):
+        """escape_string escapes single quote: "it's" → "it\\'s"."""
+        result = generator.escape_string("it's")
+        assert result == "it\\'s"
+
+    def test_escape_string_backslash(self, generator):
+        """escape_string escapes backslash: "a\\b" → "a\\\\b"."""
+        result = generator.escape_string("a\\b")
+        assert result == "a\\\\b"
+
+    def test_escape_string_both(self, generator):
+        """escape_string escapes both: "it's a\\b" → "it\\'s a\\\\b"."""
+        result = generator.escape_string("it's a\\b")
+        assert result == "it\\'s a\\\\b"
+
+    def test_escape_string_empty(self, generator):
+        """escape_string with empty string returns empty string."""
+        result = generator.escape_string("")
+        assert result == ""
+
+    def test_to_json_string_simple_list(self, generator):
+        """to_json_string with simple list → valid JSON array string."""
+        result = generator.to_json_string([1, 2, 3])
+        assert result == "[1, 2, 3]"
+
+    def test_to_json_string_non_ascii(self, generator):
+        """to_json_string preserves non-ASCII characters (ensure_ascii=False)."""
+        result = generator.to_json_string(["hello", "世界"])
+        assert "世界" in result
+        assert isinstance(result, str)
+
+    def test_to_json_string_empty_list(self, generator):
+        """to_json_string with empty list → "[]"."""
+        result = generator.to_json_string([])
+        assert result == "[]"
