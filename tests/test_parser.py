@@ -1,6 +1,7 @@
 """Unit tests for JSONLParser."""
 
 import json
+import types
 from pathlib import Path
 
 import pytest
@@ -72,11 +73,23 @@ def test_single_line_file_yields_one_record(parser, tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Test: multi-line file is read line-by-line (streaming, not all at once)
+# Test: parse_file returns a generator, not a list
 # ---------------------------------------------------------------------------
 
-def test_parse_file_reads_line_by_line(parser, tmp_path):
-    """Verify streaming: results come in correct line-number order across many lines."""
+def test_parse_file_returns_generator(parser, tmp_path):
+    """Verify that parse_file returns a generator for lazy evaluation."""
+    f = tmp_path / "test.jsonl"
+    f.write_text('{"a": 1}\n', encoding="utf-8")
+    result = parser.parse_file(f)
+    assert isinstance(result, types.GeneratorType), "parse_file must return a generator, not a list"
+
+
+# ---------------------------------------------------------------------------
+# Test: multi-line file yields records in correct line-number order
+# ---------------------------------------------------------------------------
+
+def test_parse_file_yields_in_order(parser, tmp_path):
+    """Verify results come in correct line-number order across many lines."""
     num_records = 100
     records = [{"index": i} for i in range(num_records)]
     jsonl_file = write_jsonl(tmp_path / "multi.jsonl", records)
@@ -124,3 +137,16 @@ def test_blank_lines_are_skipped(parser, tmp_path):
     assert len(results) == 2
     assert results[0] == (1, {"a": 1})
     assert results[1] == (3, {"b": 2})
+
+
+# ---------------------------------------------------------------------------
+# Test: non-dict JSON lines (arrays, strings, numbers) are skipped
+# ---------------------------------------------------------------------------
+
+def test_non_dict_json_lines_are_skipped(parser, tmp_path):
+    """Verify that arrays, strings, and numbers are skipped (only dicts are valid records)."""
+    f = tmp_path / "test.jsonl"
+    f.write_text('[1,2,3]\n"hello"\n42\n{"key": "val"}\n', encoding="utf-8")
+    results = list(parser.parse_file(f))
+    assert len(results) == 1
+    assert results[0] == (4, {"key": "val"})

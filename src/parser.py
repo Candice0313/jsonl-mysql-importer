@@ -12,7 +12,8 @@ class JSONLParser:
         """Yield (line_number, parsed_dict) for each valid JSON line.
 
         Reads the file line-by-line without loading the entire file into memory.
-        Lines that fail to parse as JSON are silently skipped.
+        Lines that fail to parse as JSON are silently skipped. Non-dict JSON values
+        (arrays, scalars, etc.) are also skipped since they cannot represent table records.
 
         Args:
             file_path: Path to the JSONL file to parse.
@@ -29,5 +30,6 @@ class JSONLParser:
                     parsed = json.loads(stripped)
                 except json.JSONDecodeError:
                     continue
+                # Non-dict JSON values (arrays, scalars) are not valid table records and are skipped
                 if isinstance(parsed, dict):
                     yield (line_number, parsed)
