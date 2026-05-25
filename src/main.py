@@ -1,6 +1,7 @@
 """Entry point for the JSONL-to-MySQL import system."""
 
 import argparse
+import sys
 from pathlib import Path
 
 from src.config import load_config
@@ -32,7 +33,7 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
-def _process_file(parser, file_path, table_name, report, config):
+def _process_file(parser, file_path, table_name, report):
     """Stream records from a JSONL file, validate, track progress and skips."""
     records = []
     row_count = 0
@@ -41,8 +42,10 @@ def _process_file(parser, file_path, table_name, report, config):
         # Validate
         if table_name == "alias_table":
             parser.validate_alias_record(line_num, record)
-        else:
+        elif table_name == "entities_table":
             parser.validate_entity_record(line_num, record)
+        else:
+            raise ValueError(f"Unknown table name: {table_name}")
         records.append(record)
         row_count += 1
         if row_count % 10_000 == 0:
@@ -73,14 +76,14 @@ def main(argv=None):
     # Process alias_table.jsonl
     print(f"Processing {config.alias_file}...")
     report.add_table("alias_table")
-    alias_records = _process_file(parser, config.alias_file, "alias_table", report, config)
+    alias_records = _process_file(parser, config.alias_file, "alias_table", report)
     alias_scripts = generator.generate_inserts(iter(alias_records), "alias_table", output_dir)
     report.record_scripts("alias_table", alias_scripts)
 
     # Process entities.jsonl
     print(f"Processing {config.entity_file}...")
     report.add_table("entities_table")
-    entity_records = _process_file(parser, config.entity_file, "entities_table", report, config)
+    entity_records = _process_file(parser, config.entity_file, "entities_table", report)
     entity_scripts = generator.generate_inserts(iter(entity_records), "entities_table", output_dir)
     report.record_scripts("entities_table", entity_scripts)
 
@@ -102,6 +105,9 @@ def main(argv=None):
                 print(f"Executing {script}...")
                 executor.execute_script(script)
             executor.close()
+        else:
+            print("ERROR: Could not connect to database. Skipping execution.", file=sys.stderr)
+            sys.exit(1)
 
     # Generate report
     report.finish()
