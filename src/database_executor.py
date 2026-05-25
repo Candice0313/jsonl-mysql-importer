@@ -102,6 +102,7 @@ class DatabaseExecutor:
                             self._log_error(msg)
                             return False
                     else:
+                        self._log_error(f"User declined to create database '{self.database}'")
                         return False
                 else:
                     msg = f"MySQL connection error (attempt {attempt}/{self.MAX_RETRIES}): {exc}"

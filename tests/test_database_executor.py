@@ -164,6 +164,41 @@ class TestConnect:
         assert "db.example.com" in log_content
         assert "3307" in log_content
 
+    @patch("src.database_executor.time.sleep")
+    @patch("builtins.input", return_value="n")
+    @patch("src.database_executor.mysql.connector.connect")
+    def test_connect_db_not_found_user_declines(self, mock_connect, mock_input, mock_sleep, tmp_path):
+        """When errno=1049 and user declines, connect() returns False and error is logged."""
+        err = make_mysql_error(1049, "Unknown database 'testdb'")
+        mock_connect.side_effect = err
+
+        ex = make_executor()
+        ex.error_log_path = tmp_path / "import_errors.log"
+        result = ex.connect()
+
+        assert result is False
+        assert ex.error_log_path.exists()
+        log_content = ex.error_log_path.read_text()
+        assert "User declined to create database" in log_content
+
+    @patch("src.database_executor.time.sleep")
+    @patch("builtins.input", return_value="y")
+    @patch("src.database_executor.mysql.connector.connect")
+    def test_connect_db_not_found_user_accepts(self, mock_connect, mock_input, mock_sleep, tmp_path):
+        """When errno=1049 and user accepts, CREATE DATABASE is called and reconnect succeeds."""
+        err = make_mysql_error(1049, "Unknown database 'testdb'")
+        mock_conn = MagicMock()
+
+        # First call raises errno 1049, subsequent calls succeed
+        mock_connect.side_effect = [err, mock_conn, mock_conn]
+
+        ex = make_executor()
+        ex.error_log_path = tmp_path / "import_errors.log"
+        result = ex.connect()
+
+        assert result is True
+        assert ex.connection is mock_conn
+
 
 # ---------------------------------------------------------------------------
 # close()
