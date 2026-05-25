@@ -1,7 +1,7 @@
 """Configuration module for the JSONL-to-MySQL import system."""
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -23,6 +23,17 @@ class Config:
     # Processing settings
     batch_size: int = 1000
     max_file_size_mb: int = 50
+
+    # Execution mode
+    execute: bool = False
+
+    def __post_init__(self):
+        if not (1 <= self.port <= 65535):
+            raise ValueError(f"port must be between 1 and 65535, got {self.port}")
+        if self.batch_size <= 0:
+            raise ValueError(f"batch_size must be > 0, got {self.batch_size}")
+        if self.max_file_size_mb <= 0:
+            raise ValueError(f"max_file_size_mb must be > 0, got {self.max_file_size_mb}")
 
 
 def load_config(config_path: Optional[str] = None, **overrides) -> Config:

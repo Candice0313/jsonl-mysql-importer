@@ -40,6 +40,7 @@ def main(argv=None):
         username=args.username,
         password=args.password,
         output_dir=args.output_dir,
+        execute=args.execute,
     )
 
     print("Config loaded")
