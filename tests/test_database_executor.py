@@ -3,11 +3,8 @@
 Real DB connections are not required; mysql.connector is mocked throughout.
 """
 
-import logging
 from pathlib import Path
-from unittest.mock import MagicMock, patch, mock_open, call
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from src.database_executor import DatabaseExecutor
 from mysql.connector import Error as MySQLError
@@ -78,7 +75,7 @@ class TestConnect:
 
     @patch("src.database_executor.time.sleep")
     @patch("src.database_executor.mysql.connector.connect")
-    def test_connect_failure_returns_false(self, mock_connect, mock_sleep, tmp_path, monkeypatch):
+    def test_connect_failure_returns_false(self, mock_connect, _mock_sleep, tmp_path, monkeypatch):
         monkeypatch.setattr(
             "src.database_executor.DatabaseExecutor.error_log_path",
             tmp_path / "import_errors.log",
@@ -96,7 +93,7 @@ class TestConnect:
 
     @patch("src.database_executor.time.sleep")
     @patch("src.database_executor.mysql.connector.connect")
-    def test_connect_retries_3_times(self, mock_connect, mock_sleep, tmp_path):
+    def test_connect_retries_3_times(self, mock_connect, _mock_sleep, tmp_path):
         err = make_mysql_error(2003, "Connection refused")
         mock_connect.side_effect = err
 
@@ -108,7 +105,7 @@ class TestConnect:
 
     @patch("src.database_executor.time.sleep")
     @patch("src.database_executor.mysql.connector.connect")
-    def test_connect_logs_error_on_failure(self, mock_connect, mock_sleep, tmp_path):
+    def test_connect_logs_error_on_failure(self, mock_connect, _mock_sleep, tmp_path):
         err = make_mysql_error(2003, "Connection refused")
         mock_connect.side_effect = err
 
@@ -137,7 +134,7 @@ class TestConnect:
 
     @patch("src.database_executor.time.sleep")
     @patch("src.database_executor.mysql.connector.connect")
-    def test_connect_auth_failure_no_password_in_error(self, mock_connect, mock_sleep, tmp_path):
+    def test_connect_auth_failure_no_password_in_error(self, mock_connect, _mock_sleep, tmp_path):
         """Authentication error message must NOT contain the password."""
         err = make_mysql_error(1045, "Access denied for user 'root'@'localhost'")
         mock_connect.side_effect = err
@@ -151,7 +148,7 @@ class TestConnect:
 
     @patch("src.database_executor.time.sleep")
     @patch("src.database_executor.mysql.connector.connect")
-    def test_connect_host_unreachable_message(self, mock_connect, mock_sleep, tmp_path):
+    def test_connect_host_unreachable_message(self, mock_connect, _mock_sleep, tmp_path):
         """Host-unreachable error should include host and port in log."""
         err = make_mysql_error(2003, "Can't connect to host")
         mock_connect.side_effect = err
@@ -167,7 +164,7 @@ class TestConnect:
     @patch("src.database_executor.time.sleep")
     @patch("builtins.input", return_value="n")
     @patch("src.database_executor.mysql.connector.connect")
-    def test_connect_db_not_found_user_declines(self, mock_connect, mock_input, mock_sleep, tmp_path):
+    def test_connect_db_not_found_user_declines(self, mock_connect, mock_input, _mock_sleep, tmp_path):
         """When errno=1049 and user declines, connect() returns False and error is logged."""
         err = make_mysql_error(1049, "Unknown database 'testdb'")
         mock_connect.side_effect = err
@@ -184,7 +181,7 @@ class TestConnect:
     @patch("src.database_executor.time.sleep")
     @patch("builtins.input", return_value="y")
     @patch("src.database_executor.mysql.connector.connect")
-    def test_connect_db_not_found_user_accepts(self, mock_connect, mock_input, mock_sleep, tmp_path):
+    def test_connect_db_not_found_user_accepts(self, mock_connect, mock_input, _mock_sleep, tmp_path):
         """When errno=1049 and user accepts, CREATE DATABASE is called and reconnect succeeds."""
         err = make_mysql_error(1049, "Unknown database 'testdb'")
         mock_conn = MagicMock()
