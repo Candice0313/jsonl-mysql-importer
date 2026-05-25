@@ -52,3 +52,73 @@ class JSONLParser:
         This allows the parser to be reused across multiple files.
         """
         self.skipped_lines = []
+
+    def validate_alias_record(self, line_num: int, record: dict) -> list[str]:
+        """Validate an alias record from alias_table.jsonl.
+
+        Checks for required fields and correct types. Does NOT skip records — returns
+        a list of warning strings that were logged.
+
+        Args:
+            line_num: The line number of the record (1-indexed).
+            record: The parsed record dictionary.
+
+        Returns:
+            List of warning strings (empty if valid).
+        """
+        warnings = []
+
+        # Check alias_id: must be present and be an integer (not float/str)
+        if "alias_id" not in record or not isinstance(record.get("alias_id"), int):
+            warning = f"line {line_num}: alias_id missing or not an integer"
+            warnings.append(warning)
+            logger.warning(warning)
+
+        # Check cui: must be present and be a non-empty string
+        if not record.get("cui") or not isinstance(record.get("cui"), str):
+            warning = f"line {line_num}: cui missing or empty"
+            warnings.append(warning)
+            logger.warning(warning)
+
+        # Check alias: must be present
+        if "alias" not in record:
+            warning = f"line {line_num}: alias field missing"
+            warnings.append(warning)
+            logger.warning(warning)
+
+        return warnings
+
+    def validate_entity_record(self, line_num: int, record: dict) -> list[str]:
+        """Validate an entity record from entities.jsonl.
+
+        Checks for required fields and correct types. Does NOT skip records — returns
+        a list of warning strings that were logged.
+
+        Args:
+            line_num: The line number of the record (1-indexed).
+            record: The parsed record dictionary.
+
+        Returns:
+            List of warning strings (empty if valid).
+        """
+        warnings = []
+
+        # Check cui: must be present and be a non-empty string
+        if not record.get("cui") or not isinstance(record.get("cui"), str):
+            warning = f"line {line_num}: cui missing or empty"
+            warnings.append(warning)
+            logger.warning(warning)
+
+        # Check aliases: must be present and be a list
+        if "aliases" not in record or not isinstance(record.get("aliases"), list):
+            warning = f"line {line_num}: aliases missing or not a JSON array"
+            warnings.append(warning)
+            logger.warning(warning)
+
+        # Check types: must be present and be a list
+        if "types" not in record or not isinstance(record.get("types"), list):
+            warning = f"line {line_num}: types missing or not a JSON array"
+            warnings.append(warning)
+            logger.warning(warning)
+
+        return warnings

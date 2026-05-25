@@ -242,3 +242,133 @@ def test_reset_clears_skipped_lines(parser, tmp_path):
     parser.reset()
     assert len(parser.skipped_lines) == 0
     assert parser.skipped_lines == []
+
+
+# ---------------------------------------------------------------------------
+# Test: validation methods for alias and entity records
+# ---------------------------------------------------------------------------
+
+class TestValidation:
+    """Test suite for validate_alias_record and validate_entity_record methods."""
+
+    # =========================================================================
+    # Tests for validate_alias_record
+    # =========================================================================
+
+    def test_validate_alias_record_valid(self, parser):
+        """Valid alias record returns empty list."""
+        record = {"alias_id": 1, "cui": "C0000001", "alias": "Example"}
+        warnings = parser.validate_alias_record(1, record)
+        assert warnings == []
+
+    def test_validate_alias_record_missing_alias_id(self, parser):
+        """alias_id missing → warning returned."""
+        record = {"cui": "C0000001", "alias": "Example"}
+        warnings = parser.validate_alias_record(2, record)
+        assert len(warnings) == 1
+        assert "line 2: alias_id missing or not an integer" in warnings
+
+    def test_validate_alias_record_alias_id_is_string(self, parser):
+        """alias_id is string (wrong type) → warning returned."""
+        record = {"alias_id": "1", "cui": "C0000001", "alias": "Example"}
+        warnings = parser.validate_alias_record(3, record)
+        assert len(warnings) == 1
+        assert "line 3: alias_id missing or not an integer" in warnings
+
+    def test_validate_alias_record_alias_id_is_float(self, parser):
+        """alias_id is float (wrong type) → warning returned."""
+        record = {"alias_id": 1.5, "cui": "C0000001", "alias": "Example"}
+        warnings = parser.validate_alias_record(4, record)
+        assert len(warnings) == 1
+        assert "line 4: alias_id missing or not an integer" in warnings
+
+    def test_validate_alias_record_missing_cui(self, parser):
+        """cui missing → warning returned."""
+        record = {"alias_id": 1, "alias": "Example"}
+        warnings = parser.validate_alias_record(5, record)
+        assert len(warnings) == 1
+        assert "line 5: cui missing or empty" in warnings
+
+    def test_validate_alias_record_cui_empty_string(self, parser):
+        """cui is empty string → warning returned."""
+        record = {"alias_id": 1, "cui": "", "alias": "Example"}
+        warnings = parser.validate_alias_record(6, record)
+        assert len(warnings) == 1
+        assert "line 6: cui missing or empty" in warnings
+
+    def test_validate_alias_record_missing_alias(self, parser):
+        """alias field missing → warning returned."""
+        record = {"alias_id": 1, "cui": "C0000001"}
+        warnings = parser.validate_alias_record(7, record)
+        assert len(warnings) == 1
+        assert "line 7: alias field missing" in warnings
+
+    def test_validate_alias_record_multiple_errors(self, parser):
+        """Multiple validation errors → all warnings returned."""
+        record = {"alias_id": "1", "cui": ""}
+        warnings = parser.validate_alias_record(8, record)
+        assert len(warnings) == 3
+        assert "line 8: alias_id missing or not an integer" in warnings
+        assert "line 8: cui missing or empty" in warnings
+        assert "line 8: alias field missing" in warnings
+
+    # =========================================================================
+    # Tests for validate_entity_record
+    # =========================================================================
+
+    def test_validate_entity_record_valid(self, parser):
+        """Valid entity record returns empty list."""
+        record = {"cui": "C0000001", "aliases": ["Example", "Test"], "types": ["Disease"]}
+        warnings = parser.validate_entity_record(1, record)
+        assert warnings == []
+
+    def test_validate_entity_record_missing_cui(self, parser):
+        """cui missing → warning returned."""
+        record = {"aliases": ["Example"], "types": ["Disease"]}
+        warnings = parser.validate_entity_record(9, record)
+        assert len(warnings) == 1
+        assert "line 9: cui missing or empty" in warnings
+
+    def test_validate_entity_record_cui_empty_string(self, parser):
+        """cui is empty string → warning returned."""
+        record = {"cui": "", "aliases": ["Example"], "types": ["Disease"]}
+        warnings = parser.validate_entity_record(10, record)
+        assert len(warnings) == 1
+        assert "line 10: cui missing or empty" in warnings
+
+    def test_validate_entity_record_aliases_missing(self, parser):
+        """aliases missing → warning returned."""
+        record = {"cui": "C0000001", "types": ["Disease"]}
+        warnings = parser.validate_entity_record(11, record)
+        assert len(warnings) == 1
+        assert "line 11: aliases missing or not a JSON array" in warnings
+
+    def test_validate_entity_record_aliases_is_dict(self, parser):
+        """aliases is dict (not list) → warning returned."""
+        record = {"cui": "C0000001", "aliases": {"name": "Example"}, "types": ["Disease"]}
+        warnings = parser.validate_entity_record(12, record)
+        assert len(warnings) == 1
+        assert "line 12: aliases missing or not a JSON array" in warnings
+
+    def test_validate_entity_record_types_missing(self, parser):
+        """types missing → warning returned."""
+        record = {"cui": "C0000001", "aliases": ["Example"]}
+        warnings = parser.validate_entity_record(13, record)
+        assert len(warnings) == 1
+        assert "line 13: types missing or not a JSON array" in warnings
+
+    def test_validate_entity_record_types_is_string(self, parser):
+        """types is string (not list) → warning returned."""
+        record = {"cui": "C0000001", "aliases": ["Example"], "types": "Disease"}
+        warnings = parser.validate_entity_record(14, record)
+        assert len(warnings) == 1
+        assert "line 14: types missing or not a JSON array" in warnings
+
+    def test_validate_entity_record_multiple_errors(self, parser):
+        """Multiple validation errors → all warnings returned."""
+        record = {"cui": "", "aliases": {"name": "Example"}}
+        warnings = parser.validate_entity_record(15, record)
+        assert len(warnings) == 3
+        assert "line 15: cui missing or empty" in warnings
+        assert "line 15: aliases missing or not a JSON array" in warnings
+        assert "line 15: types missing or not a JSON array" in warnings
