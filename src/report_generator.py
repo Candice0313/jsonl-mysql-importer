@@ -3,8 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import List, Tuple
-import os
+from typing import List, Optional, Tuple
 
 
 @dataclass
@@ -24,8 +23,8 @@ class ReportGenerator:
 
     def __init__(self):
         """Initialize the ReportGenerator with empty state."""
-        self.start_time: datetime = None
-        self.end_time: datetime = None
+        self.start_time: Optional[datetime] = None
+        self.end_time: Optional[datetime] = None
         self.tables: dict[str, TableStats] = {}
 
     def start(self):
