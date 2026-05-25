@@ -68,8 +68,9 @@ class JSONLParser:
         """
         warnings = []
 
-        # Check alias_id: must be present and be an integer (not float/str)
-        if "alias_id" not in record or not isinstance(record.get("alias_id"), int):
+        # Check alias_id: must be present and be an integer (not float/str/bool)
+        alias_id = record.get("alias_id")
+        if "alias_id" not in record or not isinstance(alias_id, int) or isinstance(alias_id, bool):
             warning = f"line {line_num}: alias_id missing or not an integer"
             warnings.append(warning)
             logger.warning(warning)

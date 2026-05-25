@@ -282,6 +282,13 @@ class TestValidation:
         assert len(warnings) == 1
         assert "line 4: alias_id missing or not an integer" in warnings
 
+    def test_validate_alias_record_alias_id_bool_rejected(self, parser):
+        """alias_id is bool → warning returned (bool is subclass of int)."""
+        record = {"alias_id": True, "cui": "C0000001", "alias": "Example"}
+        warnings = parser.validate_alias_record(1, record)
+        assert len(warnings) == 1
+        assert "alias_id" in warnings[0]
+
     def test_validate_alias_record_missing_cui(self, parser):
         """cui missing → warning returned."""
         record = {"alias_id": 1, "alias": "Example"}
