@@ -38,6 +38,22 @@ class TestGenerateAliasTableSchema:
         sql = generator.generate_alias_table_schema()
         assert "DEFAULT CHARSET=utf8mb4" in sql
 
+    def test_alias_id_not_null(self, generator):
+        sql = generator.generate_alias_table_schema()
+        assert "alias_id INT NOT NULL" in sql
+
+    def test_cui_not_null(self, generator):
+        sql = generator.generate_alias_table_schema()
+        assert "cui VARCHAR(50) NOT NULL" in sql
+
+    def test_alias_not_null(self, generator):
+        sql = generator.generate_alias_table_schema()
+        assert "alias TEXT NOT NULL" in sql
+
+    def test_contains_primary_key(self, generator):
+        sql = generator.generate_alias_table_schema()
+        assert "id INT AUTO_INCREMENT PRIMARY KEY" in sql
+
 
 class TestGenerateEntitiesTableSchema:
     def test_contains_table_name(self, generator):
@@ -68,6 +84,10 @@ class TestGenerateEntitiesTableSchema:
         sql = generator.generate_entities_table_schema()
         assert "DEFAULT CHARSET=utf8mb4" in sql
 
+    def test_contains_primary_key(self, generator):
+        sql = generator.generate_entities_table_schema()
+        assert "id INT AUTO_INCREMENT PRIMARY KEY" in sql
+
 
 class TestGenerateSchemas:
     def test_contains_both_tables(self, generator):
@@ -87,3 +107,15 @@ class TestGenerateSchemas:
         entities_sql = generator.generate_entities_table_schema()
         assert alias_sql in sql
         assert entities_sql in sql
+
+    def test_blank_line_separator(self, generator):
+        sql = generator.generate_schemas()
+        assert "\n\n" in sql
+
+
+class TestSQLGeneratorConstants:
+    def test_max_file_size(self):
+        assert SQLGenerator.MAX_FILE_SIZE == 50 * 1024 * 1024
+
+    def test_batch_size(self):
+        assert SQLGenerator.BATCH_SIZE == 1000
