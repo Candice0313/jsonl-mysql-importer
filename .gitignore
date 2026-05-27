@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Config with credentials
+import_config.json
+
+# Generated output
+output/
+
+# Logs
+import_errors.log
+
+# Environment
+.env
+venv/
+.venv/
